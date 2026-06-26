@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrimsonClaw 桌宠</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  body { overflow: hidden; background: transparent; font-family: 'Segoe UI', sans-serif; height: 100vh; }
+
+  /* 宠物容器 - 在桌面上浮动 */
+  #pet {
+    position: fixed;
+    width: 140px;
+    height: 160px;
+    cursor: grab;
+    z-index: 9999;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: none;
+  }
+  #pet:active { cursor: grabbing; }
+
+  /* 猫猫身体 */
+  #pet-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 尾巴 - 会摇 */
+  .tail {
+    position: absolute;
+    bottom: 32px;
+    right: -8px;
+    width: 32px;
+    height: 10px;
+    background: #ff8c63;
+    border-radius: 0 10px 10px 0;
+    transform-origin: left center;
+    animation: tailWag 0.8s ease-in-out infinite alternate;
+    z-index: 0;
+  }
+  @keyframes tailWag {
+    0% { transform: rotate(-10deg); }
+    100% { transform: rotate(20deg); }
+  }
+
+  /* 身体 */
+  .body {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 100px;
+    height: 70px;
+    background: #ff9f7c;
+    border-radius: 50% 50% 45% 45%;
+    z-index: 2;
+  }
+
+  /* 肚皮 */
+  .belly {
+    position: absolute;
+    bottom: 28px;
+    left: 35px;
+    width: 60px;
+    height: 45px;
+    background: #ffd0b5;
+    border-radius: 50% 50% 45% 45%;
+    z-index: 3;
+  }
+
+  /* 头 */
+  .head {
+    position: absolute;
+    top: 10px;
+    left: 30px;
+    width: 80px;
+    height: 65px;
+    background: #ff9f7c;
+    border-radius: 50%;
+    z-index: 4;
+  }
+
+  /* 耳朵 */
+  .ear {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 28px solid #ffb08c;
+    z-index: 5;
+  }
+  .ear-l { top: -6px; left: 10px; transform: rotate(-10deg); }
+  .ear-r { top: -6px; right: 10px; transform: rotate(10deg); }
+  .ear-inner {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 16px solid #ffb8a0;
+    top: 6px; left: -8px;
+  }
+
+  /* 眼睛 */
+  .eye {
+    position: absolute;
+    width: 16px;
+    height: 18px;
+    background: #333;
+    border-radius: 50%;
+    top: 20px;
+    z-index: 6;
+    transition: all 0.1s ease;
+  }
+  .eye::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px;
+    right: 3px;
+  }
+  .eye-l { left: 15px; }
+  .eye-r { right: 15px; }
+
+  /* 眨眼的眼 */
+  .eye.blink {
+    height: 2px;
+    top: 26px;
+    background: #555;
+  }
+  .eye.blink::after { display: none; }
+
+  /* 嘴 */
+  .mouth {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 6px;
+    border-bottom: 3px solid #c47250;
+    border-radius: 0 0 50% 50%;
+    z-index: 6;
+  }
+
+  /* 胡子 */
+  .whisker {
+    position: absolute;
+    width: 28px;
+    height: 1px;
+    background: #c47250;
+    top: 36px;
+    z-index: 6;
+  }
+  .whisker-l1 { left: 0; transform: rotate(-8deg); }
+  .whisker-l2 { left: -2px; top: 40px; transform: rotate(5deg); }
+  .whisker-r1 { right: 0; transform: rotate(8deg); }
+  .whisker-r2 { right: -2px; top: 40px; transform: rotate(-5deg); }
+
+  /* 手 */
+  .paw {
+    position: absolute;
+    width: 22px;
+    height: 16px;
+    background: #ff9f7c;
+    border-radius: 40%;
+    z-index: 3;
+  }
+  .paw-l { bottom: 8px; left: 18px; }
+  .paw-r { bottom: 8px; right: 18px; }
+
+  /* 脚 */
+  .foot {
+    position: absolute;
+    bottom: -2px;
+    width: 18px;
+    height: 10px;
+    background: #ffb08c;
+    border-radius: 30%;
+    z-index: 1;
+  }
+  .foot-l { left: 34px; }
+  .foot-r { right: 34px; }
+
+  /* 腮红 */
+  .blush {
+    position: absolute;
+    width: 14px;
+    height: 10px;
+    background: #ffb0a0;
+    border-radius: 50%;
+    top: 30px;
+    opacity: 0.6;
+    z-index: 6;
+  }
+  .blush-l { left: 2px; }
+  .blush-r { right: 2px; }
+
+  /* 跑步动画 */
+  .body.run { animation: runBody 0.3s ease-in-out infinite; }
+  .foot.run { animation: runFoot 0.3s ease-in-out infinite; }
+  .paw.run { animation: runPaw 0.3s ease-in-out infinite; }
+  .head.run { animation: runHead 0.3s ease-in-out infinite; }
+  .tail.run { animation: runTail 0.2s ease-in-out infinite; }
+
+  @keyframes runBody { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes runFoot {
+    0%,100% { transform: translateY(0); }
+    25% { transform: translateY(-3px); }
+    50% { transform: translateY(0); }
+    75% { transform: translateY(3px); }
+  }
+  @keyframes runPaw { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes runHead { 0%,100% { transform: rotate(0); } 50% { transform: rotate(3deg); } }
+  @keyframes runTail { 0%,100% { transform: rotate(-15deg); } 50% { transform: rotate(30deg); } }
+
+  /* 跳跃 */
+  .jump .body, .jump .head, .jump .paw, .jump .foot {
+    animation: jumpAnim 0.5s ease-out;
+  }
+  @keyframes jumpAnim {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-40px) scale(1.05, 0.95); }
+    60% { transform: translateY(-50px) scale(1); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  /* 坐下/蹲 */
+  .sit .body { transform: scaleY(0.9) translateY(6px); }
+  .sit .foot { height: 6px; }
+
+  /* 对话气泡 */
+  #speech {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    color: #333;
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border: 1px solid #eee;
+  }
+  #speech::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+  }
+  #speech.show { opacity: 1; }
+
+  /* 右键菜单 */
+  #menu {
+    position: fixed;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    padding: 6px 0;
+    z-index: 10000;
+    min-width: 140px;
+    display: none;
+    overflow: hidden;
+  }
+  #menu .item {
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: background 0.15s;
+  }
+  #menu .item:hover { background: #f5f5f5; }
+  #menu .item:active { background: #e8e8e8; }
+  #menu .sep { height: 1px; background: #eee; margin: 4px 0; }
+
+  /* 摸头特效 */
+  .pet-hearts {
+    position: absolute;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .pet-hearts span {
+    position: absolute;
+    font-size: 20px;
+    animation: heartFloat 0.8s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes heartFloat {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-40px) scale(0.5); opacity: 0; }
+  }
+
+  /* 睡觉 ZZZ */
+  .zzz {
+    position: absolute;
+    top: -20px;
+    right: -10px;
+    font-size: 16px;
+    color: #999;
+    animation: zzzFloat 1.5s ease-out infinite;
+    opacity: 0;
+    pointer-events: none;
+  }
+  @keyframes zzzFloat {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    20% { opacity: 0.7; }
+    100% { transform: translateY(-30px) translateX(15px); opacity: 0; }
+  }
+
+  /* 设置面板 */
+  #settings {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    z-index: 10001;
+    display: none;
+    width: 260px;
+    font-size: 14px;
+  }
+  #settings h3 { margin-bottom: 12px; color: #555; font-weight: 600; }
+  #settings label { display: block; margin-bottom: 10px; color: #666; }
+  #settings input[type="range"] { width: 100%; margin-top: 4px; }
+  #settings .hint { font-size: 11px; color: #999; margin-top: -6px; margin-bottom: 10px; }
+
+  /* 关闭按钮 */
+  .close-btn {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    color: #999;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .close-btn:hover { color: #333; }
+
+  /* 情绪表情 */
+  .emote {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+    z-index: 10;
+    animation: emotePop 0.5s ease-out;
+    pointer-events: none;
+  }
+  @keyframes emotePop {
+    0% { transform: translateX(-50%) scale(0); opacity: 0; }
+    50% { transform: translateX(-50%) scale(1.3); opacity: 1; }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  }
+
+  /* 行走路径 */
+  #pet.walk-mode {
+    transition: left 3s ease-in-out, top 3s ease-in-out;
+  }
+  #pet.walk-mode .body { animation: walkBody 0.5s ease-in-out infinite; }
+  #pet.walk-mode .foot { animation: walkFoot 0.5s ease-in-out infinite; }
+  @keyframes walkBody { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  @keyframes walkFoot { 0%,100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+
+  /* 拖拽时不走路 */
+  #pet.dragging { transition: none !important; }
+  #pet.dragging .body, #pet.dragging .foot { animation: none !important; }
+
+  /* 状态指示灯 */
+  .status-dot {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    z-index: 10;
+    box-shadow: 0 0 4px rgba(76,175,80,0.5);
+  }
+
+  /* 微小动画 - 呼吸 */
+  .body, .head {
+    animation: breathe 3s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+  }
+
+  /* 被摸时的开心 */
+  .happy .eye { background: #555; border-radius: 50% 50% 50% 50%; height: 14px; }
+  .happy .mouth { border-bottom: 3px solid #c47250; border-radius: 0 0 50% 50%; height: 8px; width: 16px; }
+  .happy .blush { opacity: 0.8; width: 18px; height: 12px; }
+
+  /* 鼠标跟随时的状态 */
+  .follow .eye { animation: followEyes 2s ease-in-out infinite; }
+  @keyframes followEyes {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(2px); }
+    75% { transform: translateX(-2px); }
+  }
+</style>
+</head>
+<body>
+
+<div id="pet">
+  <div id="speech">嗨~ 我是 CrimsonClaw 🐱</div>
+  <div id="pet-body">
+    <div class="status-dot"></div>
+    <div class="tail"></div>
+    <div class="ear ear-l"><div class="ear-inner"></div></div>
+    <div class="ear ear-r"><div class="ear-inner"></div></div>
+    <div class="head">
+      <div class="eye eye-l"></div>
+      <div class="eye eye-r"></div>
+      <div class="blush blush-l"></div>
+      <div class="blush blush-r"></div>
+      <div class="mouth"></div>
+      <div class="whisker whisker-l1"></div>
+      <div class="whisker whisker-l2"></div>
+      <div class="whisker whisker-r1"></div>
+      <div class="whisker whisker-r2"></div>
+    </div>
+    <div class="body">
+      <div class="belly"></div>
+    </div>
+    <div class="paw paw-l"></div>
+    <div class="paw paw-r"></div>
+    <div class="foot foot-l"></div>
+    <div class="foot foot-r"></div>
+  </div>
+</div>
+
+<!-- 右键菜单 -->
+<div id="menu">
+  <div class="item" data-action="feed">🍖 喂食</div>
+  <div class="item" data-action="play">🎾 玩耍</div>
+  <div class="item" data-action="sleep">💤 睡觉</div>
+  <div class="item" data-action="wake">☀️ 叫醒</div>
+  <div class="sep"></div>
+  <div class="item" data-action="mood">😊 心情</div>
+  <div class="item" data-action="settings">⚙️ 设置</div>
+  <div class="sep"></div>
+  <div class="item" data-action="reset">🔄 重置位置</div>
+</div>
+
+<!-- 设置面板 -->
+<div id="settings">
+  <span class="close-btn" onclick="closeSettings()">✕</span>
+  <h3>⚙️ 桌宠设置</h3>
+  <label>
+    大小
+    <input type="range" id="sizeSlider" min="60" max="200" value="100" oninput="changeSize(this.value)">
+  </label>
+  <label>
+    透明度
+    <input type="range" id="opacitySlider" min="30" max="100" value="100" oninput="changeOpacity(this.value)">
+  </label>
+  <label>
+    <input type="checkbox" id="walkToggle" checked onchange="toggleWalk(this.checked)">
+    自由走动
+  </label>
+  <div class="hint">右键点击桌宠可查看更多操作</div>
+</div>
+
+<script>
+const pet = document.getElementById('pet');
+const speech = document.getElementById('speech');
+const menu = document.getElementById('menu');
+const body = pet.querySelector('.body');
+const head = pet.querySelector('.head');
+const footL = pet.querySelector('.foot-l');
+const footR = pet.querySelector('.foot-r');
+const pawL = pet.querySelector('.paw-l');
+const pawR = pet.querySelector('.paw-r');
+const tail = pet.querySelector('.tail');
+const eyeL = pet.querySelector('.eye-l');
+const eyeR = pet.querySelector('.eye-r');
+const petBody = document.getElementById('pet-body');
+
+// 状态
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+let isSleeping = false;
+let walkMode = true;
+let walkTimer = null;
+let blinkTimer = null;
+let autoWalkTimer = null;
+let mood = 'happy';
+let petSize = 100;
+
+// 台词集
+const speeches = {
+  greeting: ['嗨~', '嗯？', '怎么啦', '找我玩吗 🐱', '好无聊哦', '摸摸我~'],
+  feed: ['好吃！', '还要！', 'yummy~', '再来点 🍖', '嗝~'],
+  play: ['好耶！', '接住！', '跑起来！', '再来！', '累了我歇会'],
+  sleep: ['zzz...', '晚安~', '呼噜呼噜...', '别吵我...'],
+  wake: ['嗯...早啊', '我还想睡...', '好亮...', '干嘛啦'],
+  happy: ['今天心情不错~', '嘿嘿 😊', '好开心！', '你也在啊'],
+  idle: ['好闲哦', '发会呆', '窗户外面有什么', '想出去逛逛', '...'],
+  click: ['嗯？', '干嘛点我', '痒~', '嘿嘿', '不要啦', '再点我生气了', '喵！'],
+  doubleClick: ['干嘛干嘛', '好烦哦', '哈哈痒', '你今天好闲'],
+};
+
+function randomFrom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// 说话
+function say(text, duration = 2500) {
+  speech.textContent = text;
+  speech.classList.add('show');
+  clearTimeout(speech._hideTimer);
+  speech._hideTimer = setTimeout(() => {
+    speech.classList.remove('show');
+  }, duration);
+}
+
+// 眨眼
+function startBlink() {
+  blinkTimer = setInterval(() => {
+    if (isSleeping) return;
+    eyeL.classList.add('blink');
+    eyeR.classList.add('blink');
+    setTimeout(() => {
+      eyeL.classList.remove('blink');
+      eyeR.classList.remove('blink');
+    }, 150);
+  }, 3000 + Math.random() * 3000);
+}
+
+// 表情符号
+function showEmote(emoji) {
+  const existing = petBody.querySelector('.emote');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'emote';
+  el.textContent = emoji;
+  petBody.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+// 摸头特效
+function showHearts() {
+  const existing = petBody.querySelector('.pet-hearts');
+  if (existing) existing.remove();
+  const container = document.createElement('div');
+  container.className = 'pet-hearts';
+  container.style.cssText = 'left:50%;top:20px;';
+  for (let i = 0; i < 3; i++) {
+    const span = document.createElement('span');
+    span.textContent = ['❤️','💕','✨'][i];
+    span.style.left = (i - 1) * 15 + 'px';
+    span.style.animationDelay = (i * 0.15) + 's';
+    container.appendChild(span);
+  }
+  petBody.appendChild(container);
+  setTimeout(() => container.remove(), 1500);
+}
+
+// 添加ZZZ
+function addZZZ() {
+  const existing = petBody.querySelector('.zzz');
+  if (existing) return;
+  const z = document.createElement('div');
+  z.className = 'zzz';
+  z.textContent = '💤';
+  petBody.appendChild(z);
+  setTimeout(() => z.remove(), 3000);
+}
+
+// 开始睡眠
+function goSleep() {
+  isSleeping = true;
+  pet.classList.add('sit');
+  say(randomFrom(speeches.sleep), 2000);
+  const zInterval = setInterval(() => {
+    if (!isSleeping) { clearInterval(zInterval); return; }
+    addZZZ();
+  }, 2000);
+  pet._sleepInterval = zInterval;
+}
+
+// 醒来
+function wakeUp() {
+  if (!isSleeping) return;
+  isSleeping = false;
+  pet.classList.remove('sit');
+  clearInterval(pet._sleepInterval);
+  say(randomFrom(speeches.wake), 2000);
+}
+
+// 动作
+function actionFeed() {
+  if (isSleeping) { wakeUp(); }
+  showEmote('🍖');
+  say(randomFrom(speeches.feed), 2000);
+  pet.classList.remove('happy');
+}
+
+function actionPlay() {
+  if (isSleeping) { wakeUp(); }
+  showEmote('🎾');
+  say(randomFrom(speeches.play), 2000);
+  // 跑两步
+  body.classList.add('run');
+  footL.classList.add('run');
+  footR.classList.add('run');
+  pawL.classList.add('run');
+  pawR.classList.add('run');
+  head.classList.add('run');
+  tail.classList.add('run');
+  setTimeout(() => {
+    body.classList.remove('run');
+    footL.classList.remove('run');
+    footR.classList.remove('run');
+    pawL.classList.remove('run');
+    pawR.classList.remove('run');
+    head.classList.remove('run');
+    tail.classList.remove('run');
+  }, 1200);
+}
+
+function actionSleep() {
+  goSleep();
+}
+
+function actionWake() {
+  wakeUp();
+}
+
+function actionMood() {
+  if (isSleeping) {
+    wakeUp();
+    setTimeout(() => actionMood(), 500);
+    return;
+  }
+  const moods = {
+    happy: ['😊 今天心情不错', '嘿嘿 😊', '美滋滋'],
+    sad: ['😿 有点emo', '不开心...', '想哭'],
+    angry: ['😾 别惹我', '哼！', '生气了'],
+    surprised: ['😲 哇！', '哎？', '真的假的']
+  };
+  const keys = Object.keys(moods);
+  const currentMood = keys[Math.floor(Math.random() * keys.length)];
+  const msg = randomFrom(moods[currentMood]);
+  showEmote(currentMood === 'happy' ? '😊' : currentMood === 'sad' ? '😿' : currentMood === 'angry' ? '😾' : '😲');
+  say(msg, 2000);
+}
+
+// 自由走动
+function startAutoWalk() {
+  if (!walkMode) return;
+  clearInterval(autoWalkTimer);
+  autoWalkTimer = setInterval(() => {
+    if (isDragging || isSleeping) return;
+    const maxX = window.innerWidth - 150;
+    const maxY = window.innerHeight - 180;
+    const x = 20 + Math.random() * (maxX - 40);
+    const y = 20 + Math.random() * (maxY - 40);
+    pet.classList.remove('walk-mode');
+    // 强制重排
+    void pet.offsetWidth;
+    pet.classList.add('walk-mode');
+    pet.style.left = x + 'px';
+    pet.style.top = y + 'px';
+    // 转向
+    const flip = x > parseFloat(pet.style.left || 0);
+    // 少说点话
+    if (Math.random() < 0.15) {
+      say(randomFrom(speeches.idle), 2000);
+    }
+  }, 5000 + Math.random() * 5000);
+}
+
+// 移动到随机位置但不自动走
+function walkTo(x, y) {
+  pet.classList.remove('walk-mode');
+  void pet.offsetWidth;
+  pet.classList.add('walk-mode');
+  pet.style.left = x + 'px';
+  pet.style.top = y + 'px';
+}
+
+// 重置位置到屏幕中央
+function resetPosition() {
+  pet.classList.remove('walk-mode');
+  const x = (window.innerWidth - 140) / 2;
+  const y = (window.innerHeight - 160) / 2;
+  pet.style.left = x + 'px';
+  pet.style.top = y + 'px';
+  say('回来咯~', 1500);
+}
+
+// 设置
+function changeSize(val) {
+  petSize = val;
+  pet.style.transform = `translate(-50%, -50%) scale(${val / 100})`;
+  // 用fixed定位不需要translate
+}
+function changeOpacity(val) {
+  pet.style.opacity = val / 100;
+}
+function toggleWalk(on) {
+  walkMode = on;
+  if (on) {
+    startAutoWalk();
+  } else {
+    clearInterval(autoWalkTimer);
+    pet.classList.remove('walk-mode');
+  }
+}
+function closeSettings() {
+  document.getElementById('settings').style.display = 'none';
+}
+
+// --- 拖拽 ---
+pet.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  isDragging = true;
+  const rect = pet.getBoundingClientRect();
+  dragOffset.x = e.clientX - rect.left;
+  dragOffset.y = e.clientY - rect.top;
+  pet.classList.add('dragging');
+  pet.classList.remove('walk-mode');
+  clearInterval(autoWalkTimer);
+  pet.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  let x = e.clientX - dragOffset.x;
+  let y = e.clientY - dragOffset.y;
+  x = Math.max(0, Math.min(window.innerWidth - 140, x));
+  y = Math.max(0, Math.min(window.innerHeight - 160, y));
+  pet.style.left = x + 'px';
+  pet.style.top = y + 'px';
+  pet.style.transform = `scale(${petSize / 100})`;
+  pet.style.transformOrigin = 'top left';
+});
+
+document.addEventListener('mouseup', () => {
+  if (!isDragging) return;
+  isDragging = false;
+  pet.classList.remove('dragging');
+  pet.style.cursor = 'grab';
+  if (walkMode) startAutoWalk();
+});
+
+// 点击
+pet.addEventListener('click', (e) => {
+  if (isDragging) return;
+  if (isSleeping) {
+    wakeUp();
+    return;
+  }
+  say(randomFrom(speeches.click), 1500);
+});
+
+// 双击 - 摸头
+pet.addEventListener('dblclick', (e) => {
+  if (isDragging) return;
+  if (isSleeping) {
+    wakeUp();
+    return;
+  }
+  showHearts();
+  pet.classList.add('happy');
+  say('嘿嘿 摸摸头~', 2000);
+  setTimeout(() => pet.classList.remove('happy'), 2000);
+});
+
+// 右键菜单
+pet.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  menu.style.display = 'block';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 160) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 280) + 'px';
+});
+
+document.addEventListener('click', (e) => {
+  if (!menu.contains(e.target) && e.target !== pet) {
+    menu.style.display = 'none';
+  }
+});
+
+menu.addEventListener('click', (e) => {
+  const item = e.target.closest('.item');
+  if (!item) return;
+  const action = item.dataset.action;
+  menu.style.display = 'none';
+  switch(action) {
+    case 'feed': actionFeed(); break;
+    case 'play': actionPlay(); break;
+    case 'sleep': isSleeping ? actionWake() : actionSleep(); break;
+    case 'wake': actionWake(); break;
+    case 'mood': actionMood(); break;
+    case 'settings': document.getElementById('settings').style.display = 'block'; break;
+    case 'reset': resetPosition(); break;
+  }
+});
+
+// 鼠标靠近时跟随眼睛
+document.addEventListener('mousemove', (e) => {
+  const rect = pet.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const dx = (e.clientX - cx) / 30;
+  const dy = (e.clientY - cy) / 30;
+  const moveX = Math.max(-3, Math.min(3, dx));
+  const moveY = Math.max(-2, Math.min(2, dy));
+  eyeL.style.transform = `translate(${moveX}px, ${moveY}px)`;
+  eyeR.style.transform = `translate(${moveX}px, ${moveY}px)`;
+});
+
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') actionFeed();
+  if (e.key === 'p' || e.key === 'P') actionPlay();
+  if (e.key === 's' || e.key === 'S') isSleeping ? actionWake() : actionSleep();
+  if (e.key === 'r' || e.key === 'R') resetPosition();
+  if (e.key === '1') showEmote('😊');
+  if (e.key === '2') showEmote('😿');
+  if (e.key === '3') showEmote('😾');
+  if (e.key === '4') showEmote('😲');
+  if (e.key === 'h' || e.key === 'H') showHearts();
+});
+
+// 初始化
+function init() {
+  pet.style.transform = `scale(${petSize / 100})`;
+  pet.style.transformOrigin = 'top left';
+  // 设置位置
+  const x = (window.innerWidth - 140) / 2;
+  const y = (window.innerHeight - 160) / 2;
+  pet.style.left = x + 'px';
+  pet.style.top = y + 'px';
+  // 开始动画
+  startBlink();
+  setTimeout(() => say(randomFrom(speeches.greeting), 2500), 800);
+  if (walkMode) startAutoWalk();
+  // 定时闲话
+  setInterval(() => {
+    if (!isSleeping && !isDragging && Math.random() < 0.2) {
+      say(randomFrom(speeches.idle), 1800);
+    }
+    if (isSleeping && Math.random() < 0.3) {
+      addZZZ();
+    }
+  }, 15000);
+}
+
+// 窗口大小改变时重置位置
+window.addEventListener('resize', () => {
+  const rect = pet.getBoundingClientRect();
+  let x = parseFloat(pet.style.left) || rect.left;
+  let y = parseFloat(pet.style.top) || rect.top;
+  x = Math.max(0, Math.min(window.innerWidth - 140, x));
+  y = Math.max(0, Math.min(window.innerHeight - 160, y));
+  pet.style.left = x + 'px';
+  pet.style.top = y + 'px';
+});
+
+init();
+</script>
+</body>
+</html>
